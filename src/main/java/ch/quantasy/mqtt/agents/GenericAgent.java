@@ -6,7 +6,7 @@
 package ch.quantasy.mqtt.agents;
 
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
-import ch.quantasy.mqtt.gateway.client.ClientContract;
+import ch.quantasy.mqtt.gateway.client.AyamlClientContract;
 import ch.quantasy.mqtt.gateway.client.GatewayClient;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
 import java.net.URI;
@@ -20,12 +20,12 @@ import org.eclipse.paho.client.mqttv3.MqttException;
  *
  * @author reto
  */
-public class GenericAgent extends GatewayClient<ClientContract> {
+public class GenericAgent extends GatewayClient<AyamlClientContract> {
 
     private final ManagerServiceContract managerServiceContract;
     private final Map<TinkerforgeStackAddress, Boolean> stacks;
 
-    public GenericAgent(URI mqttURI, String clientID, ClientContract contract) throws MqttException {
+    public GenericAgent(URI mqttURI, String clientID, AyamlClientContract contract) throws MqttException {
         super(mqttURI, clientID, contract);
         managerServiceContract = new ManagerServiceContract("Manager");
         stacks = new HashMap<>();

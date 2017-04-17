@@ -5,14 +5,14 @@
  */
 package ch.quantasy.mqtt.agents;
 
-import ch.quantasy.mqtt.gateway.client.ClientContract;
+import ch.quantasy.mqtt.gateway.client.AyamlClientContract;
 import java.util.Map;
 
 /**
  *
  * @author reto
  */
-public class GenericAgentContract extends ClientContract{
+public class GenericAgentContract extends AyamlClientContract{
 
     public GenericAgentContract(String rootContext, String baseClass) {
         super("Agent",rootContext, baseClass);
