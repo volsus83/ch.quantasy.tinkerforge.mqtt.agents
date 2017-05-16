@@ -43,13 +43,11 @@
 package ch.quantasy.mqtt.agents.Segment7x4;
 
 import ch.quantasy.gateway.service.device.segment4x7.Segment4x7ServiceContract;
-import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
 import ch.quantasy.mqtt.agents.GenericAgent;
 import ch.quantasy.mqtt.agents.GenericAgentContract;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
 import java.net.URI;
 import org.eclipse.paho.client.mqttv3.MqttException;
-import ch.quantasy.mqtt.gateway.client.MessageReceiver;
 import ch.quantasy.tinkerforge.device.TinkerforgeDeviceClass;
 import ch.quantasy.tinkerforge.device.segment4x7.DeviceSegments;
 

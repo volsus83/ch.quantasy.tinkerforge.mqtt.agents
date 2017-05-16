@@ -44,16 +44,16 @@ public class GenericAgent extends GatewayClient<AyamlClientContract> {
             synchronized (stacks) {
                 stacks.put(address, false);
             }
-            System.out.println("Subscribing to "+address);
-            subscribe(managerServiceContract.STATUS_STACK_ADDRESS + "/" + stackName , (topic, payload) -> {
-                System.out.println("Message arrived from: "+topic);
+            System.out.println("Subscribing to " + address);
+            subscribe(managerServiceContract.STATUS_STACK_ADDRESS + "/" + stackName, (topic, payload) -> {
+                System.out.println("Message arrived from: " + topic);
                 Boolean isConnected = getMapper().readValue(payload, Boolean.class);
                 synchronized (stacks) {
                     stacks.put(address, isConnected);
                     stacks.notifyAll();
                 }
             });
-                        System.out.println("Connecting: "+stackName);
+            System.out.println("Connecting: " + stackName);
 
             publishIntent(managerServiceContract.INTENT_STACK_ADDRESS_ADD, address);
         }
@@ -73,11 +73,19 @@ public class GenericAgent extends GatewayClient<AyamlClientContract> {
                         Logger.getLogger(GenericAgent.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
+            }else{
+                //This is an ugly hack in order to cope with a race-condition:
+                //As soon as the stack is ready, it spawns new threads as soon as it detects a new Brick(let).
+                //Unfortunately, it is not known, when this process is finished (@see IPConnection#enumerate)
+                //Thus waiting 3 seconds might be fine.
+                //This is not a solution! This states an intrinsic problem.
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException ex) {
+                    //That is fine.
+                }
             }
         }
-
+        
     }
-    
-   
-
 }
