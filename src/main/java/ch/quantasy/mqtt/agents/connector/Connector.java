@@ -62,8 +62,13 @@ public class Connector extends GenericAgent {
         super(mqttURI, "f94kjf93d9", new GenericAgentContract("Connector", "euo"));
         connect();
         managerServiceContract = new ManagerServiceContract("Manager");
+        if (super.getManagerServiceContracts().length == 0) {
+            System.out.println("No ManagerServcie is running... Quit.");
+            return;
+        }
 
-        connectStacks(new TinkerforgeStackAddress("erdgeschoss"), new TinkerforgeStackAddress("untergeschoss"), new TinkerforgeStackAddress("obergeschoss"), new TinkerforgeStackAddress("lights01"));
+        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
+        connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("erdgeschoss"), new TinkerforgeStackAddress("untergeschoss"), new TinkerforgeStackAddress("obergeschoss"), new TinkerforgeStackAddress("lights01"));
 
     }
 

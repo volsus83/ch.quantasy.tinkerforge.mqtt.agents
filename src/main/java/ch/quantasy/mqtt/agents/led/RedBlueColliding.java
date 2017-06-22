@@ -66,7 +66,6 @@ import org.eclipse.paho.client.mqttv3.MqttException;
  */
 public class RedBlueColliding extends GenericAgent {
 
-    private final ManagerServiceContract managerServiceContract;
     private final List<AnLEDAbility> abilities;
     private final int frameDurationInMillis;
     private final int amountOfLEDs;
@@ -78,10 +77,15 @@ public class RedBlueColliding extends GenericAgent {
         frameDurationInMillis = 10;
         amountOfLEDs = 50;
         abilities = new ArrayList<>();
-        managerServiceContract = new ManagerServiceContract("Manager");
 
         //connectRemoteServices(new TinkerforgeStackAddress("lights01"));
-        connectStacks(new TinkerforgeStackAddress("localhost"));
+        if (super.getManagerServiceContracts().length == 0) {
+            System.out.println("No ManagerServcie is running... Quit.");
+            return;
+        }
+
+        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
+        connectStacksTo(managerServiceContract,new TinkerforgeStackAddress("localhost"));
 
         // LEDStripDeviceConfig config = new LEDStripDeviceConfig(LEDStripDeviceConfig.ChipType.WS2811, 2000000, frameDurationInMillis, amountOfLEDs, LEDStripDeviceConfig.ChannelMapping.BRG);
         LEDStripDeviceConfig config = new LEDStripDeviceConfig(LEDStripDeviceConfig.ChipType.WS2801, 2000000, frameDurationInMillis, amountOfLEDs, LEDStripDeviceConfig.ChannelMapping.RGB);

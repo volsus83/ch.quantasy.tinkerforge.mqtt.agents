@@ -11,7 +11,9 @@ import ch.quantasy.mqtt.gateway.client.GatewayClient;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -22,13 +24,40 @@ import org.eclipse.paho.client.mqttv3.MqttException;
  */
 public class GenericAgent extends GatewayClient<AyamlClientContract> {
 
-    private final ManagerServiceContract managerServiceContract;
     private final Map<TinkerforgeStackAddress, Boolean> stacks;
+    private final Set<ManagerServiceContract> managerServiceContracts;
 
     public GenericAgent(URI mqttURI, String clientID, AyamlClientContract contract) throws MqttException {
         super(mqttURI, clientID, contract);
-        managerServiceContract = new ManagerServiceContract("Manager");
         stacks = new HashMap<>();
+        managerServiceContracts = new HashSet<>();
+    }
+    
+    @Override
+    public void connect() throws MqttException{
+        super.connect();
+        subscribe("TF/Manager/U/+/S/connection", (topic, payload) -> {
+            System.out.println("Message arrived from: " + topic);
+            synchronized (managerServiceContracts) {
+                String managerUnit = topic.substring("TF/Manager/U/".length(), topic.indexOf("/S/connection", "TF/Manager/U/".length()));
+                managerServiceContracts.add(new ManagerServiceContract(managerUnit, "Manager"));
+                System.out.println(managerUnit);
+                managerServiceContracts.notifyAll();
+            }
+        });
+    }
+
+    public ManagerServiceContract[] getManagerServiceContracts() {
+        synchronized (managerServiceContracts) {
+            if(managerServiceContracts.isEmpty()){
+                try {
+                    managerServiceContracts.wait(3000);
+                } catch (InterruptedException ex) {
+                    //that is ok
+                }
+            }
+            return managerServiceContracts.toArray(new ManagerServiceContract[0]);
+        }
     }
 
     public boolean isStackConnected(TinkerforgeStackAddress address) {
@@ -37,9 +66,9 @@ public class GenericAgent extends GatewayClient<AyamlClientContract> {
         }
     }
 
-    public void connectStacks(TinkerforgeStackAddress... addresses) {
-        for (TinkerforgeStackAddress address : addresses) {
+    public void connectStacksTo(ManagerServiceContract managerServiceContract, TinkerforgeStackAddress... addresses) {
 
+        for (TinkerforgeStackAddress address : addresses) {
             String stackName = address.getHostName() + ":" + address.getPort();
             synchronized (stacks) {
                 stacks.put(address, false);
@@ -73,7 +102,7 @@ public class GenericAgent extends GatewayClient<AyamlClientContract> {
                         Logger.getLogger(GenericAgent.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
-            }else{
+            } else {
                 //This is an ugly hack in order to cope with a race-condition:
                 //As soon as the stack is ready, it spawns new threads as soon as it detects a new Brick(let).
                 //Unfortunately, it is not known, when this process is finished (@see IPConnection#enumerate)
@@ -86,6 +115,6 @@ public class GenericAgent extends GatewayClient<AyamlClientContract> {
                 }
             }
         }
-        
+
     }
 }

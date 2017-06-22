@@ -67,7 +67,6 @@ import java.util.List;
  */
 public class OuterLightsAgent extends GenericAgent {
 
-    private final ManagerServiceContract managerServiceContract;
     private final DCServiceContract dcServiceContract;
     private final LinearPotiServiceContract linearPotiServiceContract;
     private List<MotionDetectorServiceContract> motionDetectorServiceContracts;
@@ -84,16 +83,21 @@ public class OuterLightsAgent extends GenericAgent {
         delayedOff = new DelayedOff();
         t = new Thread(delayedOff);
         t.start();
-        managerServiceContract = new ManagerServiceContract("Manager");
         motionDetectorServiceContracts = new ArrayList<>();
         ambientLightServiceContracts = new ArrayList<>();
-        motionDetectorServiceContracts.add(new MotionDetectorServiceContract("kgB", TinkerforgeDeviceClass.MotionDetector.toString()));
-        motionDetectorServiceContracts.add(new MotionDetectorServiceContract("kfP", TinkerforgeDeviceClass.MotionDetector.toString()));
-        ambientLightServiceContracts.add(new AmbientLightServiceContract("jxr", TinkerforgeDeviceClass.AmbientLight.toString()));
-        dcServiceContract = new DCServiceContract("6kP5Zh", TinkerforgeDeviceClass.DC.toString());
-        linearPotiServiceContract = new LinearPotiServiceContract("bxJ", TinkerforgeDeviceClass.LinearPoti.toString());
+        motionDetectorServiceContracts.add(new MotionDetectorServiceContract("kgB"));
+        motionDetectorServiceContracts.add(new MotionDetectorServiceContract("kfP"));
+        ambientLightServiceContracts.add(new AmbientLightServiceContract("jxr"));
+        dcServiceContract = new DCServiceContract("6kP5Zh");
+        linearPotiServiceContract = new LinearPotiServiceContract("bxJ");
 
-        connectStacks(new TinkerforgeStackAddress("controller01"), new TinkerforgeStackAddress("erdgeschoss"));
+        if (super.getManagerServiceContracts().length == 0) {
+            System.out.println("No ManagerServcie is running... Quit.");
+            return;
+        }
+
+        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
+        connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("controller01"), new TinkerforgeStackAddress("erdgeschoss"));
 
         publishIntent(linearPotiServiceContract.INTENT_POSITION_CALLBACK_PERIOD, 100);
         publishIntent(dcServiceContract.INTENT_ACCELERATION, 10000);

@@ -44,6 +44,7 @@ package ch.quantasy.mqtt.agents.led;
 
 import ch.quantasy.mqtt.agents.led.abilities.WaveAdjustableBrightness;
 import ch.quantasy.gateway.service.device.ledStrip.LEDStripServiceContract;
+import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
 import ch.quantasy.mqtt.agents.GenericAgent;
 import ch.quantasy.mqtt.agents.GenericAgentContract;
 import ch.quantasy.mqtt.gateway.client.GCEvent;
@@ -77,7 +78,13 @@ public class LEDLights01 extends GenericAgent {
         delayInMinutes = 1;
         waveList = new ArrayList<>();
 
-        connectStacks(new TinkerforgeStackAddress("ledLights01"));
+       if (super.getManagerServiceContracts().length == 0) {
+            System.out.println("No ManagerServcie is running... Quit.");
+            return;
+        }
+
+        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
+        connectStacksTo(managerServiceContract,new TinkerforgeStackAddress("ledLights01"));
 
         LEDStripDeviceConfig p34Config = new LEDStripDeviceConfig(LEDStripDeviceConfig.ChipType.WS2812RGBW, 2000000, frameDurationInMillis, p34AmountOfLEDs, LEDStripDeviceConfig.ChannelMapping.BRGW);
         LEDStripServiceContract p34LedServiceContract = new LEDStripServiceContract("p34", TinkerforgeDeviceClass.LEDStrip.toString());

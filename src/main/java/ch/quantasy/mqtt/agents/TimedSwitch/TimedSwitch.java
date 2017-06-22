@@ -43,6 +43,7 @@
 package ch.quantasy.mqtt.agents.TimedSwitch;
 
 import ch.quantasy.gateway.service.device.remoteSwitch.RemoteSwitchServiceContract;
+import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
 import ch.quantasy.mqtt.agents.GenericAgent;
 import ch.quantasy.mqtt.agents.GenericAgentContract;
 import ch.quantasy.tinkerforge.device.TinkerforgeDeviceClass;
@@ -67,8 +68,16 @@ public class TimedSwitch extends GenericAgent {
     public TimedSwitch(URI mqttURI) throws MqttException {
         super(mqttURI, "9520efj30sdk", new GenericAgentContract("TimedSwitch", "qD7"));
         connect();
-        connectStacks(new TinkerforgeStackAddress("untergeschoss"));
-        remoteSwitchServiceContract = new RemoteSwitchServiceContract("qD7", TinkerforgeDeviceClass.RemoteSwitch.toString());
+        remoteSwitchServiceContract = new RemoteSwitchServiceContract("qD7");
+
+        if (super.getManagerServiceContracts().length == 0) {
+            System.out.println("No ManagerServcie is running... Quit.");
+            return;
+        }
+
+        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
+        connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("untergeschoss"));
+
         Timer t = new Timer();
         t.scheduleAtFixedRate(new Switcher(), 0, 1000 * 60 * 60);
     }

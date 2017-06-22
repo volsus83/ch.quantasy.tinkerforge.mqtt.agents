@@ -60,17 +60,21 @@ import ch.quantasy.tinkerforge.device.servo.Servo;
  */
 public class ServoAgent extends GenericAgent {
 
-    private final ManagerServiceContract managerServiceContract;
     private final ServoServiceContract servoServiceContract;
 
     public ServoAgent(URI mqttURI) throws MqttException, InterruptedException {
         super(mqttURI, "erspin4", new GenericAgentContract("Servo", "01"));
         connect();
 
-        managerServiceContract = new ManagerServiceContract("Manager");
         servoServiceContract = new ServoServiceContract("6JLxaK", TinkerforgeDeviceClass.Servo.toString());
 
-        connectStacks(new TinkerforgeStackAddress("localhost"));
+        if (super.getManagerServiceContracts().length == 0) {
+            System.out.println("No ManagerServcie is running... Quit.");
+            return;
+        }
+
+        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
+        connectStacksTo(managerServiceContract,new TinkerforgeStackAddress("localhost"));
 
         publishIntent(servoServiceContract.INTENT_STATUS_LED, false);
         Thread.sleep(2000);

@@ -65,7 +65,6 @@ import ch.quantasy.mqtt.gateway.client.MessageReceiver;
  */
 public class AmbientLEDLightAgent1 extends GenericAgent {
 
-    private final ManagerServiceContract managerServiceContract;
     private final List<WaveAdjustableBrightness> waveList;
     private Thread timerThread;
     private final int frameDurationInMillis;
@@ -79,9 +78,14 @@ public class AmbientLEDLightAgent1 extends GenericAgent {
         amountOfLEDs = 120;
         delayInMinutes = 1;
         waveList = new ArrayList<>();
-        managerServiceContract = new ManagerServiceContract("Manager");
 
-        connectStacks(new TinkerforgeStackAddress("ledline01"));
+        if (super.getManagerServiceContracts().length == 0) {
+            System.out.println("No ManagerServcie is running... Quit.");
+            return;
+        }
+
+        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
+        connectStacksTo(managerServiceContract,new TinkerforgeStackAddress("ledline01"));
         //connectRemoteServices(new TinkerforgeStackAddress("localhost"));
         RotaryEncoderServiceContract rotaryEncoderServiceContract = new RotaryEncoderServiceContract("je3", TinkerforgeDeviceClass.RotaryEncoder.toString());
 

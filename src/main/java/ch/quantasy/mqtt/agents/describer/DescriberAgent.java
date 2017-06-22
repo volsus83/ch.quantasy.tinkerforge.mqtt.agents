@@ -56,14 +56,19 @@ import ch.quantasy.mqtt.gateway.client.MessageReceiver;
  */
 public class DescriberAgent extends GenericAgent implements MessageReceiver {
 
-    private final ManagerServiceContract managerServiceContract;
 
     public DescriberAgent(URI mqttURI) throws MqttException {
-        super(mqttURI, "349h3492zf", new GenericAgentContract( "Describer", "desc"));
-        managerServiceContract = new ManagerServiceContract("Manager");
+        super(mqttURI, "349h3492zf", new GenericAgentContract("Describer", "desc"));
         subscribe("TF/LEDStrip/description/#", this);
         connect();
-        connectStacks(new TinkerforgeStackAddress("Lights01"));
+
+        if (super.getManagerServiceContracts().length == 0) {
+            System.out.println("No ManagerServcie is running... Quit.");
+            return;
+        }
+
+        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
+        connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("Lights01"));
     }
 
     @Override

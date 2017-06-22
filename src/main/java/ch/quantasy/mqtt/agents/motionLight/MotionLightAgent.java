@@ -44,6 +44,7 @@ package ch.quantasy.mqtt.agents.motionLight;
 
 import ch.quantasy.gateway.service.device.motionDetector.MotionDetectorServiceContract;
 import ch.quantasy.gateway.service.device.remoteSwitch.RemoteSwitchServiceContract;
+import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
 import ch.quantasy.mqtt.agents.GenericAgent;
 import ch.quantasy.mqtt.agents.GenericAgentContract;
 import ch.quantasy.tinkerforge.device.TinkerforgeDeviceClass;
@@ -67,9 +68,18 @@ public class MotionLightAgent extends GenericAgent {
     public MotionLightAgent(URI mqttURI) throws MqttException {
         super(mqttURI, "2408h40h4", new GenericAgentContract("MotionLight", "e48"));
         connect();
-        connectStacks(new TinkerforgeStackAddress("erdgeschoss"));
-        remoteSwitchServiceContract = new RemoteSwitchServiceContract("jKQ", TinkerforgeDeviceClass.RemoteSwitch.toString());
-        motionDetectorServiceContract = new MotionDetectorServiceContract("kfT", TinkerforgeDeviceClass.MotionDetector.toString());
+
+        remoteSwitchServiceContract = new RemoteSwitchServiceContract("jKQ");
+        motionDetectorServiceContract = new MotionDetectorServiceContract("kfT");
+        t = new Thread(new Switcher());
+
+        if (super.getManagerServiceContracts().length == 0) {
+            System.out.println("No ManagerServcie is running... Quit.");
+            return;
+        }
+
+        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
+        connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("erdgeschoss"));
 
         subscribe(motionDetectorServiceContract.EVENT_DETECTION_CYCLE_ENDED, (topic, payload) -> {
             synchronized (MotionLightAgent.this) {
@@ -84,7 +94,6 @@ public class MotionLightAgent extends GenericAgent {
             }
         });
 
-        t = new Thread(new switcher());
         t.start();
 
     }
@@ -93,7 +102,7 @@ public class MotionLightAgent extends GenericAgent {
 
     private SwitchSocketCParameters.SwitchTo state;
 
-    class switcher implements Runnable {
+    class Switcher implements Runnable {
 
         @Override
         public void run() {

@@ -45,6 +45,7 @@ package ch.quantasy.mqtt.agents.led;
 import ch.quantasy.mqtt.agents.led.abilities.AnLEDAbility;
 
 import ch.quantasy.gateway.service.device.ledStrip.LEDStripServiceContract;
+import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
 import ch.quantasy.mqtt.agents.GenericAgent;
 import ch.quantasy.mqtt.agents.GenericAgentContract;
 import ch.quantasy.mqtt.agents.led.abilities.Fire;
@@ -77,7 +78,13 @@ public class LEDs20W extends GenericAgent {
         amountOfLEDs = 4;
         abilities = new ArrayList<>();
 
-        connectStacks(new TinkerforgeStackAddress("lights10"));
+        if (super.getManagerServiceContracts().length == 0) {
+            System.out.println("No ManagerServcie is running... Quit.");
+            return;
+        }
+
+        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
+        connectStacksTo(managerServiceContract,new TinkerforgeStackAddress("lights10"));
 
         LEDStripDeviceConfig config = new LEDStripDeviceConfig(LEDStripDeviceConfig.ChipType.WS2811, 2000000, frameDurationInMillis, amountOfLEDs, LEDStripDeviceConfig.ChannelMapping.GRB);
 

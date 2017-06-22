@@ -43,6 +43,7 @@
 package ch.quantasy.mqtt.agents.Segment7x4;
 
 import ch.quantasy.gateway.service.device.segment4x7.Segment4x7ServiceContract;
+import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
 import ch.quantasy.mqtt.agents.GenericAgent;
 import ch.quantasy.mqtt.agents.GenericAgentContract;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
@@ -61,7 +62,13 @@ public class Segment7x4Agent extends GenericAgent {
         super(mqttURI, "9h83jkl482", new GenericAgentContract("Segment7x4", "counter"));
 
         connect();
-        connectStacks(new TinkerforgeStackAddress("localhost"));
+        if (super.getManagerServiceContracts().length == 0) {
+            System.out.println("No ManagerServcie is running... Quit.");
+            return;
+        }
+
+        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
+        connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("localhost"));
         Segment4x7ServiceContract segment4x7ServiceContract = new Segment4x7ServiceContract("pPA", TinkerforgeDeviceClass.SegmentDisplay4x7.toString());
 
         short[] segments = {1, 2, 3, 4};

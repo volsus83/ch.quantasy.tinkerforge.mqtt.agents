@@ -48,13 +48,10 @@ import ch.quantasy.gateway.service.device.servo.ServoServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
 import ch.quantasy.mqtt.agents.GenericAgent;
 import ch.quantasy.mqtt.agents.GenericAgentContract;
-import ch.quantasy.mqtt.agents.led.AmbientLEDLightAgent;
 import ch.quantasy.mqtt.gateway.client.GCEvent;
 import ch.quantasy.tinkerforge.device.TinkerforgeDeviceClass;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
 import java.net.URI;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import ch.quantasy.tinkerforge.device.servo.Degree;
 import ch.quantasy.tinkerforge.device.servo.PulseWidth;
@@ -66,7 +63,6 @@ import ch.quantasy.tinkerforge.device.servo.Servo;
  */
 public class ServoJoystickAgent extends GenericAgent {
 
-    private final ManagerServiceContract managerServiceContract;
     private final ServoServiceContract servoServiceContract;
     private final JoystickServiceContract joystickServiceContract;
 
@@ -76,16 +72,22 @@ public class ServoJoystickAgent extends GenericAgent {
         super(mqttURI, "epnerp4", new GenericAgentContract("ServoJoystick", "SJ01"));
         connect();
 
-        managerServiceContract = new ManagerServiceContract("Manager");
         servoServiceContract = new ServoServiceContract("6JLxaK", TinkerforgeDeviceClass.Servo.toString());
         joystickServiceContract = new JoystickServiceContract("hBc", TinkerforgeDeviceClass.Joystick.toString());
 
-        connectStacks(new TinkerforgeStackAddress("localhost"));
-
-        publishIntent(servoServiceContract.INTENT_STATUS_LED, false);
         servos = new Servo[2];
         servos[0] = new Servo(0);
         servos[1] = new Servo(1);
+
+        if (super.getManagerServiceContracts().length == 0) {
+            System.out.println("No ManagerServcie is running... Quit.");
+            return;
+        }
+
+        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
+        connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("localhost"));
+
+        publishIntent(servoServiceContract.INTENT_STATUS_LED, false);
 
         servos[0].setPulseWidth(new PulseWidth(1000, 2000));
         servos[0].setDegree(new Degree((short) -32767, (short) 32767));
@@ -141,18 +143,6 @@ public class ServoJoystickAgent extends GenericAgent {
         });
         publishIntent(joystickServiceContract.INTENT_POSITION_CALLBACK_PERIOD, 10);
 
-    }
-
-    private void connectRemoteServices(String... addresses) {
-        for (String address : addresses) {
-            publishIntent(managerServiceContract.INTENT_STACK_ADDRESS_ADD, new TinkerforgeStackAddress(address));
-            try {
-                //Bad idea! Better wait for the event of the managerService... having accepted the stack(s).
-                Thread.sleep(1000);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(AmbientLEDLightAgent.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
     }
 
     public static void main(String[] args) throws Throwable {
