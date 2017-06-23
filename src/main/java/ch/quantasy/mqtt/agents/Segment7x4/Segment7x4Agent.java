@@ -57,8 +57,9 @@ import ch.quantasy.tinkerforge.device.segment4x7.DeviceSegments;
  * @author reto
  */
 public class Segment7x4Agent extends GenericAgent {
+    private ManagerServiceContract managerServiceContract;
 
-    public Segment7x4Agent(URI mqttURI) throws MqttException {
+    public Segment7x4Agent(URI mqttURI) throws MqttException, InterruptedException {
         super(mqttURI, "9h83jkl482", new GenericAgentContract("Segment7x4", "counter"));
 
         connect();
@@ -67,10 +68,9 @@ public class Segment7x4Agent extends GenericAgent {
             return;
         }
 
-        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
+        managerServiceContract = super.getManagerServiceContracts()[0];
         connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("localhost"));
         Segment4x7ServiceContract segment4x7ServiceContract = new Segment4x7ServiceContract("pPA", TinkerforgeDeviceClass.SegmentDisplay4x7.toString());
-
         short[] segments = {1, 2, 3, 4};
         short brightness = 4;
         boolean colon = false;
@@ -82,7 +82,13 @@ public class Segment7x4Agent extends GenericAgent {
             publishIntent(segment4x7ServiceContract.INTENT_SEGMENTS, new DeviceSegments(segments, brightness, false));
 
         });
-        publishIntent(segment4x7ServiceContract.INTENT_SEGMENTS, new DeviceSegments(segments, brightness, false));
+        publishIntent(segment4x7ServiceContract.INTENT_SEGMENTS, new DeviceSegments(segments, brightness, true));
+
+    }
+
+    public void finish() {
+        super.removeStackFrom(managerServiceContract, new TinkerforgeStackAddress("localhost"));
+        return;
     }
 
     public static void main(String... args) throws Throwable {
@@ -95,6 +101,7 @@ public class Segment7x4Agent extends GenericAgent {
         System.out.printf("\n%s will be used as broker address.\n", mqttURI);
         Segment7x4Agent agent = new Segment7x4Agent(mqttURI);
         System.in.read();
+        agent.finish();
     }
 
 }
