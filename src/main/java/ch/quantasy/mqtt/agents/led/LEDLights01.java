@@ -45,8 +45,8 @@ package ch.quantasy.mqtt.agents.led;
 import ch.quantasy.mqtt.agents.led.abilities.WaveAdjustableBrightness;
 import ch.quantasy.gateway.service.device.ledStrip.LEDStripServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
-import ch.quantasy.mqtt.agents.GenericAgent;
-import ch.quantasy.mqtt.agents.GenericAgentContract;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
 import ch.quantasy.mqtt.gateway.client.GCEvent;
 import ch.quantasy.tinkerforge.device.TinkerforgeDeviceClass;
 import ch.quantasy.tinkerforge.device.led.LEDStripDeviceConfig;
@@ -61,7 +61,7 @@ import ch.quantasy.mqtt.gateway.client.MessageReceiver;
  *
  * @author reto
  */
-public class LEDLights01 extends GenericAgent {
+public class LEDLights01 extends GenericTinkerforgeAgent {
 
     private final List<WaveAdjustableBrightness> waveList;
     private final int frameDurationInMillis;
@@ -70,7 +70,7 @@ public class LEDLights01 extends GenericAgent {
     private int delayInMinutes;
 
     public LEDLights01(URI mqttURI) throws MqttException {
-        super(mqttURI, "9h83jkl482", new GenericAgentContract("LEDLights01", "ledLights01Wave"));
+        super(mqttURI, "9h83jkl482", new GenericTinkerforgeAgentContract("LEDLights01", "ledLights01Wave"));
         connect();
         frameDurationInMillis = 50;
         p34AmountOfLEDs = 228;
@@ -78,13 +78,13 @@ public class LEDLights01 extends GenericAgent {
         delayInMinutes = 1;
         waveList = new ArrayList<>();
 
-       if (super.getManagerServiceContracts().length == 0) {
+       if (super.getTinkerforgeManagerServiceContracts().length == 0) {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
 
-        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
-        connectStacksTo(managerServiceContract,new TinkerforgeStackAddress("ledLights01"));
+        ManagerServiceContract managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
+        connectTinkerforgeStacksTo(managerServiceContract,new TinkerforgeStackAddress("ledLights01"));
 
         LEDStripDeviceConfig p34Config = new LEDStripDeviceConfig(LEDStripDeviceConfig.ChipType.WS2812RGBW, 2000000, frameDurationInMillis, p34AmountOfLEDs, LEDStripDeviceConfig.ChannelMapping.BRGW);
         LEDStripServiceContract p34LedServiceContract = new LEDStripServiceContract("p34", TinkerforgeDeviceClass.LEDStrip.toString());

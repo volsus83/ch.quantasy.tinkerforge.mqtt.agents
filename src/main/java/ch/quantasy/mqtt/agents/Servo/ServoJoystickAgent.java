@@ -46,8 +46,8 @@ import ch.quantasy.gateway.service.device.joystick.JoystickService;
 import ch.quantasy.gateway.service.device.joystick.JoystickServiceContract;
 import ch.quantasy.gateway.service.device.servo.ServoServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
-import ch.quantasy.mqtt.agents.GenericAgent;
-import ch.quantasy.mqtt.agents.GenericAgentContract;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
 import ch.quantasy.mqtt.gateway.client.GCEvent;
 import ch.quantasy.tinkerforge.device.TinkerforgeDeviceClass;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
@@ -61,7 +61,7 @@ import ch.quantasy.tinkerforge.device.servo.Servo;
  *
  * @author reto
  */
-public class ServoJoystickAgent extends GenericAgent {
+public class ServoJoystickAgent extends GenericTinkerforgeAgent {
 
     private final ServoServiceContract servoServiceContract;
     private final JoystickServiceContract joystickServiceContract;
@@ -69,7 +69,7 @@ public class ServoJoystickAgent extends GenericAgent {
     private final Servo[] servos;
 
     public ServoJoystickAgent(URI mqttURI) throws MqttException, InterruptedException {
-        super(mqttURI, "epnerp4", new GenericAgentContract("ServoJoystick", "SJ01"));
+        super(mqttURI, "epnerp4", new GenericTinkerforgeAgentContract("ServoJoystick", "SJ01"));
         connect();
 
         servoServiceContract = new ServoServiceContract("6JLxaK", TinkerforgeDeviceClass.Servo.toString());
@@ -79,13 +79,13 @@ public class ServoJoystickAgent extends GenericAgent {
         servos[0] = new Servo(0);
         servos[1] = new Servo(1);
 
-        if (super.getManagerServiceContracts().length == 0) {
+        if (super.getTinkerforgeManagerServiceContracts().length == 0) {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
 
-        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
-        connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("localhost"));
+        ManagerServiceContract managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
+        connectTinkerforgeStacksTo(managerServiceContract, new TinkerforgeStackAddress("localhost"));
 
         publishIntent(servoServiceContract.INTENT_STATUS_LED, false);
 

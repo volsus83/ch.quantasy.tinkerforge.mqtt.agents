@@ -46,8 +46,8 @@ import ch.quantasy.mqtt.agents.led.abilities.AnLEDAbility;
 
 import ch.quantasy.gateway.service.device.ledStrip.LEDStripServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
-import ch.quantasy.mqtt.agents.GenericAgent;
-import ch.quantasy.mqtt.agents.GenericAgentContract;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
 import ch.quantasy.mqtt.agents.led.abilities.Fire;
 import ch.quantasy.mqtt.gateway.client.GCEvent;
 import ch.quantasy.tinkerforge.device.TinkerforgeDeviceClass;
@@ -65,26 +65,26 @@ import org.eclipse.paho.client.mqttv3.MqttException;
  *
  * @author reto
  */
-public class LEDs20W extends GenericAgent {
+public class LEDs20W extends GenericTinkerforgeAgent {
 
     private final List<AnLEDAbility> abilities;
     private final int frameDurationInMillis;
     private final int amountOfLEDs;
 
     public LEDs20W(URI mqttURI) throws MqttException {
-        super(mqttURI, "xmastree4985", new GenericAgentContract("XMasTreeLED", "XMasTreeLed01"));
+        super(mqttURI, "xmastree4985", new GenericTinkerforgeAgentContract("XMasTreeLED", "XMasTreeLed01"));
         connect();
         frameDurationInMillis = 100;
         amountOfLEDs = 4;
         abilities = new ArrayList<>();
 
-        if (super.getManagerServiceContracts().length == 0) {
+        if (super.getTinkerforgeManagerServiceContracts().length == 0) {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
 
-        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
-        connectStacksTo(managerServiceContract,new TinkerforgeStackAddress("lights10"));
+        ManagerServiceContract managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
+        connectTinkerforgeStacksTo(managerServiceContract,new TinkerforgeStackAddress("lights10"));
 
         LEDStripDeviceConfig config = new LEDStripDeviceConfig(LEDStripDeviceConfig.ChipType.WS2811, 2000000, frameDurationInMillis, amountOfLEDs, LEDStripDeviceConfig.ChannelMapping.GRB);
 

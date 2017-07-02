@@ -44,8 +44,8 @@ package ch.quantasy.mqtt.agents.Segment7x4;
 
 import ch.quantasy.gateway.service.device.segment4x7.Segment4x7ServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
-import ch.quantasy.mqtt.agents.GenericAgent;
-import ch.quantasy.mqtt.agents.GenericAgentContract;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
 import java.net.URI;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -56,20 +56,20 @@ import ch.quantasy.tinkerforge.device.segment4x7.DeviceSegments;
  *
  * @author reto
  */
-public class Segment7x4Agent extends GenericAgent {
+public class Segment7x4Agent extends GenericTinkerforgeAgent {
     private ManagerServiceContract managerServiceContract;
 
     public Segment7x4Agent(URI mqttURI) throws MqttException, InterruptedException {
-        super(mqttURI, "9h83jkl482", new GenericAgentContract("Segment7x4", "counter"));
+        super(mqttURI, "9h83jkl482", new GenericTinkerforgeAgentContract("Segment7x4", "counter"));
 
         connect();
-        if (super.getManagerServiceContracts().length == 0) {
+        if (super.getTinkerforgeManagerServiceContracts().length == 0) {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
 
-        managerServiceContract = super.getManagerServiceContracts()[0];
-        connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("localhost"));
+        managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
+        connectTinkerforgeStacksTo(managerServiceContract, new TinkerforgeStackAddress("localhost"));
         Segment4x7ServiceContract segment4x7ServiceContract = new Segment4x7ServiceContract("pPA", TinkerforgeDeviceClass.SegmentDisplay4x7.toString());
         short[] segments = {1, 2, 3, 4};
         short brightness = 4;
@@ -87,7 +87,7 @@ public class Segment7x4Agent extends GenericAgent {
     }
 
     public void finish() {
-        super.removeStackFrom(managerServiceContract, new TinkerforgeStackAddress("localhost"));
+        super.removeTinkerforgeStackFrom(managerServiceContract, new TinkerforgeStackAddress("localhost"));
         return;
     }
 

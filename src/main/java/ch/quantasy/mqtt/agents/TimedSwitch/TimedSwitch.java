@@ -44,50 +44,49 @@ package ch.quantasy.mqtt.agents.TimedSwitch;
 
 import ch.quantasy.gateway.service.device.remoteSwitch.RemoteSwitchServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
-import ch.quantasy.mqtt.agents.GenericAgent;
-import ch.quantasy.mqtt.agents.GenericAgentContract;
+import ch.quantasy.gateway.service.timer.TimerServiceContract;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
+import ch.quantasy.mqtt.gateway.client.GCEvent;
+import ch.quantasy.timer.DeviceTickerConfiguration;
 import ch.quantasy.tinkerforge.device.remoteSwitch.SwitchSocketCParameters;
 import java.net.URI;
 import java.time.LocalDateTime;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
+import java.time.Instant;
+import java.time.ZoneId;
 
 /**
  *
  * @author reto
  */
-public class TimedSwitch extends GenericAgent {
+public class TimedSwitch extends GenericTinkerforgeAgent {
 
     private final RemoteSwitchServiceContract remoteSwitchServiceContract;
 
     public TimedSwitch(URI mqttURI) throws MqttException {
-        super(mqttURI, "9520efj30sdk", new GenericAgentContract("TimedSwitch", "qD7"));
+        super(mqttURI, "9520efj30sdk", new GenericTinkerforgeAgentContract("TimedSwitch", "qD7"));
         connect();
         remoteSwitchServiceContract = new RemoteSwitchServiceContract("qD7");
 
-        if (super.getManagerServiceContracts().length == 0) {
+        if (super.getTinkerforgeManagerServiceContracts().length == 0) {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
-
-        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
-        connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("untergeschoss"));
-
-        Timer t = new Timer();
-        t.scheduleAtFixedRate(new Switcher(), 0, 1000 * 60 * 60);
-    }
-
-    class Switcher extends TimerTask {
-
-        @Override
-        public void run() {
-            LocalDateTime theDate = LocalDateTime.now();
+        if (super.getTimerServiceContracts().length == 0) {
+            System.out.println("No TimerServcie is running... Quit.");
+            return;
+        }
+        TimerServiceContract timerContract = super.getTimerServiceContracts()[0];
+        ManagerServiceContract managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
+        connectTinkerforgeStacksTo(managerServiceContract, new TinkerforgeStackAddress("untergeschoss"));
+        subscribe(timerContract.EVENT_TICK + "/poolPump", (topic, payload) -> {
+            GCEvent<Long>[] epochTimeInMillis = toEventArray(payload, Long.class);
+            LocalDateTime theDate
+                    = LocalDateTime.ofInstant(Instant.ofEpochMilli(epochTimeInMillis[0].getTimestamp()), ZoneId.systemDefault());
             int hour = theDate.getHour();
-            System.out.print("Switch: ");
+            System.out.printf("Time: %s -> Switch: ", theDate);
             if (state == SwitchSocketCParameters.SwitchTo.switchOn || (hour > 21 || hour < 7)) {
                 switchMotor(SwitchSocketCParameters.SwitchTo.switchOff);
                 state = SwitchSocketCParameters.SwitchTo.switchOff;
@@ -97,14 +96,13 @@ public class TimedSwitch extends GenericAgent {
                 state = SwitchSocketCParameters.SwitchTo.switchOn;
                 System.out.println("on");
             }
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(TimedSwitch.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        });
+
+        subscribe(timerContract.EVENT_TICK + "/garden", (topic, payload) -> {
             switchAlwaysOn();
-            System.out.println("Always-on switched");
-        }
+        });
+        publishIntent(timerContract.INTENT_CONFIGURATION, new DeviceTickerConfiguration("poolPump", null, 0, 1000 * 60 * 60, null));
+        publishIntent(timerContract.INTENT_CONFIGURATION, new DeviceTickerConfiguration("garden", null, 0, 1000 * 60 * 30, null));
 
     }
 
@@ -129,7 +127,6 @@ public class TimedSwitch extends GenericAgent {
 
     public static void main(String[] args) throws Throwable {
         URI mqttURI = URI.create("tcp://localhost:1883");
-        //URI mqttURI = URI.create("tcp://matrix:1883");
 
         if (args.length > 0) {
             mqttURI = URI.create(args[0]);

@@ -44,8 +44,8 @@ package ch.quantasy.mqtt.agents.Servo;
 
 import ch.quantasy.gateway.service.device.servo.ServoServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
-import ch.quantasy.mqtt.agents.GenericAgent;
-import ch.quantasy.mqtt.agents.GenericAgentContract;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
 import ch.quantasy.tinkerforge.device.TinkerforgeDeviceClass;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
 import java.net.URI;
@@ -58,23 +58,23 @@ import ch.quantasy.tinkerforge.device.servo.Servo;
  *
  * @author reto
  */
-public class ServoAgent extends GenericAgent {
+public class ServoAgent extends GenericTinkerforgeAgent {
 
     private final ServoServiceContract servoServiceContract;
 
     public ServoAgent(URI mqttURI) throws MqttException, InterruptedException {
-        super(mqttURI, "erspin4", new GenericAgentContract("Servo", "01"));
+        super(mqttURI, "erspin4", new GenericTinkerforgeAgentContract("Servo", "01"));
         connect();
 
         servoServiceContract = new ServoServiceContract("6JLxaK", TinkerforgeDeviceClass.Servo.toString());
 
-        if (super.getManagerServiceContracts().length == 0) {
+        if (super.getTinkerforgeManagerServiceContracts().length == 0) {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
 
-        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
-        connectStacksTo(managerServiceContract,new TinkerforgeStackAddress("localhost"));
+        ManagerServiceContract managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
+        connectTinkerforgeStacksTo(managerServiceContract,new TinkerforgeStackAddress("localhost"));
 
         publishIntent(servoServiceContract.INTENT_STATUS_LED, false);
         Thread.sleep(2000);

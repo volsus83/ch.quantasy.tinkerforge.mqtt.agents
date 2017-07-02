@@ -6,6 +6,7 @@
 package ch.quantasy.mqtt.agents;
 
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
+import ch.quantasy.gateway.service.timer.TimerServiceContract;
 import ch.quantasy.mqtt.gateway.client.AyamlClientContract;
 import ch.quantasy.mqtt.gateway.client.GatewayClient;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
@@ -21,17 +22,19 @@ import org.eclipse.paho.client.mqttv3.MqttException;
  *
  * @author reto
  */
-public class GenericAgent extends GatewayClient<AyamlClientContract> {
+public class GenericTinkerforgeAgent extends GatewayClient<AyamlClientContract> {
 
     private final Map<TinkerforgeStackAddress, Boolean> stacks;
-    private final Set<ManagerServiceContract> managerServiceContracts;
+    private final Set<ManagerServiceContract> tinkerforgeManagerServiceContracts;
     private final Map<ManagerServiceContract, Set<TinkerforgeStackAddress>> managedStacks;
+    private final Set<TimerServiceContract> timerServiceContracts;
 
-    public GenericAgent(URI mqttURI, String clientID, AyamlClientContract contract) throws MqttException {
+    public GenericTinkerforgeAgent(URI mqttURI, String clientID, AyamlClientContract contract) throws MqttException {
         super(mqttURI, clientID, contract);
         stacks = new HashMap<>();
-        managerServiceContracts = new HashSet<>();
+        tinkerforgeManagerServiceContracts = new HashSet<>();
         managedStacks = new HashMap<>();
+        timerServiceContracts = new HashSet<>();
     }
 
     @Override
@@ -39,11 +42,11 @@ public class GenericAgent extends GatewayClient<AyamlClientContract> {
         super.connect();
         subscribe("TF/Manager/U/+/S/connection", (topic, payload) -> {
             System.out.println("Message arrived from: " + topic);
-            synchronized (managerServiceContracts) {
+            synchronized (tinkerforgeManagerServiceContracts) {
                 String managerUnit = topic.split("/")[3];
-                managerServiceContracts.add(new ManagerServiceContract(managerUnit));
+                tinkerforgeManagerServiceContracts.add(new ManagerServiceContract(managerUnit));
                 System.out.println(managerUnit);
-                managerServiceContracts.notifyAll();
+                tinkerforgeManagerServiceContracts.notifyAll();
             }
         });
         subscribe("TF/Manager/U/+/S/stack/address/#", (topic, payload) -> {
@@ -69,9 +72,16 @@ public class GenericAgent extends GatewayClient<AyamlClientContract> {
                 }
                 managedStacks.notifyAll();
             }
-
-        }
-        );
+        });
+        subscribe("Timer/Tick/U/+/S/connection", (topic, payload) -> {
+            System.out.println("Message arrived from: " + topic);
+            synchronized (timerServiceContracts) {
+                String timerUnit = topic.split("/")[3];
+                timerServiceContracts.add(new TimerServiceContract(timerUnit));
+                System.out.println(timerUnit);
+                timerServiceContracts.notifyAll();
+            }
+        });
         try {
             Thread.sleep(3000);
         } catch (InterruptedException ex) {
@@ -79,20 +89,33 @@ public class GenericAgent extends GatewayClient<AyamlClientContract> {
         }
     }
 
-    public ManagerServiceContract[] getManagerServiceContracts() {
-        synchronized (managerServiceContracts) {
-            if (managerServiceContracts.isEmpty()) {
+    public ManagerServiceContract[] getTinkerforgeManagerServiceContracts() {
+        synchronized (tinkerforgeManagerServiceContracts) {
+            if (tinkerforgeManagerServiceContracts.isEmpty()) {
                 try {
-                    managerServiceContracts.wait(3000);
+                    tinkerforgeManagerServiceContracts.wait(3000);
                 } catch (InterruptedException ex) {
                     //that is ok
                 }
             }
-            return managerServiceContracts.toArray(new ManagerServiceContract[0]);
+            return tinkerforgeManagerServiceContracts.toArray(new ManagerServiceContract[0]);
         }
     }
 
-    public Set<TinkerforgeStackAddress> getManagedStacks(ManagerServiceContract managerServiceContract) {
+    public TimerServiceContract[] getTimerServiceContracts() {
+        synchronized (timerServiceContracts) {
+            if (timerServiceContracts.isEmpty()) {
+                try {
+                    timerServiceContracts.wait(3000);
+                } catch (InterruptedException ex) {
+                    //that is ok
+                }
+            }
+            return timerServiceContracts.toArray(new TimerServiceContract[0]);
+        }
+    }
+
+    public Set<TinkerforgeStackAddress> getManagedTinkerforgeStacks(ManagerServiceContract managerServiceContract) {
         Set<TinkerforgeStackAddress> addresses = new HashSet<>();
         Set stackSet = this.managedStacks.get(managerServiceContract);
         if (stackSet != null) {
@@ -101,17 +124,17 @@ public class GenericAgent extends GatewayClient<AyamlClientContract> {
         return addresses;
     }
 
-    public void removeStackFrom(ManagerServiceContract managerServiceContract, TinkerforgeStackAddress address) {
+    public void removeTinkerforgeStackFrom(ManagerServiceContract managerServiceContract, TinkerforgeStackAddress address) {
         publishIntent(managerServiceContract.INTENT_STACK_ADDRESS_REMOVE, address);
     }
 
-    public void connectStacksTo(ManagerServiceContract managerServiceContract, TinkerforgeStackAddress... addresses) {
+    public void connectTinkerforgeStacksTo(ManagerServiceContract managerServiceContract, TinkerforgeStackAddress... addresses) {
         for (TinkerforgeStackAddress address : addresses) {
-            connectStackTo(managerServiceContract, address);
+            connectTinkerforgeStackTo(managerServiceContract, address);
         }
     }
 
-    public void connectStackTo(ManagerServiceContract managerServiceContract, TinkerforgeStackAddress address) {
+    public void connectTinkerforgeStackTo(ManagerServiceContract managerServiceContract, TinkerforgeStackAddress address) {
         if (!address.getHostName().equals("localhost")) {
             for (Set<TinkerforgeStackAddress> managedStacks : managedStacks.values()) {
                 if (managedStacks.contains(address)) {
@@ -127,7 +150,7 @@ public class GenericAgent extends GatewayClient<AyamlClientContract> {
         subscribe(managerServiceContract.STATUS_STACK_ADDRESS + "/" + stackName, (topic, payload) -> {
             System.out.println("Message arrived from: " + topic);
             Boolean isConnected = false;
-            if (payload.length>0) {
+            if (payload.length > 0) {
                 isConnected = getMapper().readValue(payload, Boolean.class);
             }
             synchronized (stacks) {

@@ -12,9 +12,9 @@ import java.util.Map;
  *
  * @author reto
  */
-public class GenericAgentContract extends AyamlClientContract{
+public class GenericTinkerforgeAgentContract extends AyamlClientContract{
 
-    public GenericAgentContract(String rootContext, String baseClass) {
+    public GenericTinkerforgeAgentContract(String rootContext, String baseClass) {
         super("Agent",rootContext, baseClass);
     }
 

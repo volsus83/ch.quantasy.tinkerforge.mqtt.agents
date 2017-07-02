@@ -47,8 +47,8 @@ import ch.quantasy.gateway.service.device.ledStrip.LEDStripServiceContract;
 import ch.quantasy.gateway.service.device.motionDetector.MotionDetectorServiceContract;
 import ch.quantasy.gateway.service.device.rotaryEncoder.RotaryEncoderServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
-import ch.quantasy.mqtt.agents.GenericAgent;
-import ch.quantasy.mqtt.agents.GenericAgentContract;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
 import ch.quantasy.mqtt.gateway.client.GCEvent;
 import ch.quantasy.tinkerforge.device.TinkerforgeDeviceClass;
 import ch.quantasy.tinkerforge.device.led.LEDStripDeviceConfig;
@@ -63,7 +63,7 @@ import ch.quantasy.mqtt.gateway.client.MessageReceiver;
  *
  * @author reto
  */
-public class AmbientLEDLightAgent1 extends GenericAgent {
+public class AmbientLEDLightAgent1 extends GenericTinkerforgeAgent {
 
     private final List<WaveAdjustableBrightness> waveList;
     private Thread timerThread;
@@ -72,20 +72,20 @@ public class AmbientLEDLightAgent1 extends GenericAgent {
     private int delayInMinutes;
 
     public AmbientLEDLightAgent1(URI mqttURI) throws MqttException {
-        super(mqttURI, "433407hfra", new GenericAgentContract("AmbientLEDLight", "lulu"));
+        super(mqttURI, "433407hfra", new GenericTinkerforgeAgentContract("AmbientLEDLight", "lulu"));
         connect();
         frameDurationInMillis = 60;
         amountOfLEDs = 120;
         delayInMinutes = 1;
         waveList = new ArrayList<>();
 
-        if (super.getManagerServiceContracts().length == 0) {
+        if (super.getTinkerforgeManagerServiceContracts().length == 0) {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
 
-        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
-        connectStacksTo(managerServiceContract,new TinkerforgeStackAddress("ledline01"));
+        ManagerServiceContract managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
+        connectTinkerforgeStacksTo(managerServiceContract,new TinkerforgeStackAddress("ledline01"));
         //connectRemoteServices(new TinkerforgeStackAddress("localhost"));
         RotaryEncoderServiceContract rotaryEncoderServiceContract = new RotaryEncoderServiceContract("je3", TinkerforgeDeviceClass.RotaryEncoder.toString());
 

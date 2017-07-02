@@ -45,8 +45,8 @@ package ch.quantasy.mqtt.agents.led;
 import ch.quantasy.mqtt.agents.led.abilities.AnLEDAbility;
 import ch.quantasy.gateway.service.device.ledStrip.LEDStripServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
-import ch.quantasy.mqtt.agents.GenericAgent;
-import ch.quantasy.mqtt.agents.GenericAgentContract;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
 import ch.quantasy.mqtt.agents.led.abilities.ColidingDots;
 import ch.quantasy.mqtt.gateway.client.GCEvent;
 import ch.quantasy.tinkerforge.device.TinkerforgeDeviceClass;
@@ -64,14 +64,14 @@ import org.eclipse.paho.client.mqttv3.MqttException;
  *
  * @author reto
  */
-public class RedBlueColliding extends GenericAgent {
+public class RedBlueColliding extends GenericTinkerforgeAgent {
 
     private final List<AnLEDAbility> abilities;
     private final int frameDurationInMillis;
     private final int amountOfLEDs;
 
     public RedBlueColliding(URI mqttURI) throws MqttException {
-        super(mqttURI, "433407hfra", new GenericAgentContract("AmbientLEDLight", "lulu"));
+        super(mqttURI, "433407hfra", new GenericTinkerforgeAgentContract("AmbientLEDLight", "lulu"));
         connect();
 
         frameDurationInMillis = 10;
@@ -79,13 +79,13 @@ public class RedBlueColliding extends GenericAgent {
         abilities = new ArrayList<>();
 
         //connectRemoteServices(new TinkerforgeStackAddress("lights01"));
-        if (super.getManagerServiceContracts().length == 0) {
+        if (super.getTinkerforgeManagerServiceContracts().length == 0) {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
 
-        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
-        connectStacksTo(managerServiceContract,new TinkerforgeStackAddress("localhost"));
+        ManagerServiceContract managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
+        connectTinkerforgeStacksTo(managerServiceContract,new TinkerforgeStackAddress("localhost"));
 
         // LEDStripDeviceConfig config = new LEDStripDeviceConfig(LEDStripDeviceConfig.ChipType.WS2811, 2000000, frameDurationInMillis, amountOfLEDs, LEDStripDeviceConfig.ChannelMapping.BRG);
         LEDStripDeviceConfig config = new LEDStripDeviceConfig(LEDStripDeviceConfig.ChipType.WS2801, 2000000, frameDurationInMillis, amountOfLEDs, LEDStripDeviceConfig.ChannelMapping.RGB);

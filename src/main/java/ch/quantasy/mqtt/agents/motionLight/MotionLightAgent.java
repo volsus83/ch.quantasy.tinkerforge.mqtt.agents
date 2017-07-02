@@ -45,9 +45,8 @@ package ch.quantasy.mqtt.agents.motionLight;
 import ch.quantasy.gateway.service.device.motionDetector.MotionDetectorServiceContract;
 import ch.quantasy.gateway.service.device.remoteSwitch.RemoteSwitchServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
-import ch.quantasy.mqtt.agents.GenericAgent;
-import ch.quantasy.mqtt.agents.GenericAgentContract;
-import ch.quantasy.tinkerforge.device.TinkerforgeDeviceClass;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
 import ch.quantasy.tinkerforge.device.remoteSwitch.SwitchSocketCParameters;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
 import java.net.URI;
@@ -59,27 +58,27 @@ import java.util.logging.Logger;
  *
  * @author reto
  */
-public class MotionLightAgent extends GenericAgent {
+public class MotionLightAgent extends GenericTinkerforgeAgent {
 
     private final RemoteSwitchServiceContract remoteSwitchServiceContract;
     private final MotionDetectorServiceContract motionDetectorServiceContract;
     private final Thread t;
 
     public MotionLightAgent(URI mqttURI) throws MqttException {
-        super(mqttURI, "2408h40h4", new GenericAgentContract("MotionLight", "e48"));
+        super(mqttURI, "2408h40h4", new GenericTinkerforgeAgentContract("MotionLight", "e48"));
         connect();
 
         remoteSwitchServiceContract = new RemoteSwitchServiceContract("jKQ");
         motionDetectorServiceContract = new MotionDetectorServiceContract("kfT");
         t = new Thread(new Switcher());
 
-        if (super.getManagerServiceContracts().length == 0) {
+        if (super.getTinkerforgeManagerServiceContracts().length == 0) {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
 
-        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
-        connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("erdgeschoss"));
+        ManagerServiceContract managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
+        connectTinkerforgeStacksTo(managerServiceContract, new TinkerforgeStackAddress("erdgeschoss"));
 
         subscribe(motionDetectorServiceContract.EVENT_DETECTION_CYCLE_ENDED, (topic, payload) -> {
             synchronized (MotionLightAgent.this) {

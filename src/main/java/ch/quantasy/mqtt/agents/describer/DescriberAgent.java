@@ -43,8 +43,8 @@
 package ch.quantasy.mqtt.agents.describer;
 
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
-import ch.quantasy.mqtt.agents.GenericAgent;
-import ch.quantasy.mqtt.agents.GenericAgentContract;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
 import java.net.URI;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -54,21 +54,21 @@ import ch.quantasy.mqtt.gateway.client.MessageReceiver;
  *
  * @author reto
  */
-public class DescriberAgent extends GenericAgent implements MessageReceiver {
+public class DescriberAgent extends GenericTinkerforgeAgent implements MessageReceiver {
 
 
     public DescriberAgent(URI mqttURI) throws MqttException {
-        super(mqttURI, "349h3492zf", new GenericAgentContract("Describer", "desc"));
+        super(mqttURI, "349h3492zf", new GenericTinkerforgeAgentContract("Describer", "desc"));
         subscribe("TF/LEDStrip/description/#", this);
         connect();
 
-        if (super.getManagerServiceContracts().length == 0) {
+        if (super.getTinkerforgeManagerServiceContracts().length == 0) {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
 
-        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
-        connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("Lights01"));
+        ManagerServiceContract managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
+        connectTinkerforgeStacksTo(managerServiceContract, new TinkerforgeStackAddress("Lights01"));
     }
 
     @Override

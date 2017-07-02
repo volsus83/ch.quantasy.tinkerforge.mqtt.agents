@@ -44,13 +44,11 @@ package ch.quantasy.mqtt.agents.outerLights;
 
 import ch.quantasy.gateway.service.device.ambientLight.AmbientLightServiceContract;
 import ch.quantasy.gateway.service.device.dc.DCServiceContract;
-import ch.quantasy.gateway.service.device.linearPoti.LinearPotiServiceContract;
 import ch.quantasy.gateway.service.device.motionDetector.MotionDetectorServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
-import ch.quantasy.mqtt.agents.GenericAgent;
-import ch.quantasy.mqtt.agents.GenericAgentContract;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
 import ch.quantasy.mqtt.gateway.client.GCEvent;
-import ch.quantasy.tinkerforge.device.TinkerforgeDeviceClass;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
 import java.net.URI;
 import java.util.logging.Level;
@@ -65,10 +63,9 @@ import java.util.List;
  *
  * @author reto
  */
-public class OuterLightsAgent extends GenericAgent {
+public class OuterLightsAgent extends GenericTinkerforgeAgent {
 
     private final DCServiceContract dcServiceContract;
-    private final LinearPotiServiceContract linearPotiServiceContract;
     private List<MotionDetectorServiceContract> motionDetectorServiceContracts;
     private List<AmbientLightServiceContract> ambientLightServiceContracts;
 
@@ -77,7 +74,7 @@ public class OuterLightsAgent extends GenericAgent {
     private int powerInPercent;
 
     public OuterLightsAgent(URI mqttURI) throws MqttException {
-        super(mqttURI, "wrth563g", new GenericAgentContract("OuterLights", "01"));
+        super(mqttURI, "wrth563g", new GenericTinkerforgeAgentContract("OuterLights", "01"));
         connect();
         powerInPercent = 100;
         delayedOff = new DelayedOff();
@@ -89,30 +86,20 @@ public class OuterLightsAgent extends GenericAgent {
         motionDetectorServiceContracts.add(new MotionDetectorServiceContract("kfP"));
         ambientLightServiceContracts.add(new AmbientLightServiceContract("jxr"));
         dcServiceContract = new DCServiceContract("6kP5Zh");
-        linearPotiServiceContract = new LinearPotiServiceContract("bxJ");
 
-        if (super.getManagerServiceContracts().length == 0) {
+        if (super.getTinkerforgeManagerServiceContracts().length == 0) {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
 
-        ManagerServiceContract managerServiceContract = super.getManagerServiceContracts()[0];
-        connectStacksTo(managerServiceContract, new TinkerforgeStackAddress("controller01"), new TinkerforgeStackAddress("erdgeschoss"));
+        ManagerServiceContract managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
+        connectTinkerforgeStacksTo(managerServiceContract, new TinkerforgeStackAddress("erdgeschoss"));
 
-        publishIntent(linearPotiServiceContract.INTENT_POSITION_CALLBACK_PERIOD, 100);
         publishIntent(dcServiceContract.INTENT_ACCELERATION, 10000);
         publishIntent(dcServiceContract.INTENT_DRIVER_MODE, 1);
         publishIntent(dcServiceContract.INTENT_PWM_FREQUENCY, 20000);
         publishIntent(dcServiceContract.INTENT_ENABLED, true);
 
-        subscribe(linearPotiServiceContract.EVENT_POSITION, new MessageReceiver() {
-            @Override
-            public void messageReceived(String topic, byte[] mm) throws Exception {
-                GCEvent<Integer>[] positionEvents = toEventArray(mm, Integer.class);
-                int position = positionEvents[0].getValue();
-                powerInPercent = position;
-            }
-        });
         for (MotionDetectorServiceContract motionDetectorServiceContract : motionDetectorServiceContracts) {
             subscribe(motionDetectorServiceContract.EVENT_MOTION_DETECTED, new MessageReceiver() {
                 @Override

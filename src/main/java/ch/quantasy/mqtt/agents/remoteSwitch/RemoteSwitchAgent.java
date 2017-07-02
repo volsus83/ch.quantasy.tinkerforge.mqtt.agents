@@ -44,45 +44,40 @@ package ch.quantasy.mqtt.agents.remoteSwitch;
 
 import ch.quantasy.gateway.service.device.remoteSwitch.RemoteSwitchServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
-import ch.quantasy.mqtt.agents.GenericAgent;
-import ch.quantasy.mqtt.agents.GenericAgentContract;
-import ch.quantasy.tinkerforge.device.TinkerforgeDeviceClass;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
+import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
 import ch.quantasy.tinkerforge.device.remoteSwitch.DimSocketBParameters;
 import ch.quantasy.tinkerforge.device.remoteSwitch.SwitchSocketBParameters;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
 import java.net.URI;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import ch.quantasy.mqtt.gateway.client.MessageReceiver;
-import java.util.Set;
 
 /**
  *
  * @author reto
  */
-public class RemoteSwitchAgent extends GenericAgent {
+public class RemoteSwitchAgent extends GenericTinkerforgeAgent {
 
     private final RemoteSwitchServiceContract remoteSwitchUG;
     private final RemoteSwitchServiceContract remoteSwitchEG;
     private final RemoteSwitchServiceContract remoteSwitchOG;
 
     public RemoteSwitchAgent(URI mqttURI) throws MqttException {
-        super(mqttURI, "5pq34in", new GenericAgentContract("RemoteSwitcher", "remoteSwitcher01"));
+        super(mqttURI, "5pq34in", new GenericTinkerforgeAgentContract("RemoteSwitcher", "remoteSwitcher01"));
         connect();
 
         remoteSwitchUG = new RemoteSwitchServiceContract("qD7");
         remoteSwitchEG = new RemoteSwitchServiceContract("jKQ");
         remoteSwitchOG = new RemoteSwitchServiceContract("jKE");
 
-        
-        if (super.getManagerServiceContracts().length == 0) {
+        if (super.getTinkerforgeManagerServiceContracts().length == 0) {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
 
-        ManagerServiceContract managerServiceContract=super.getManagerServiceContracts()[0];
-        connectStacksTo(managerServiceContract,new TinkerforgeStackAddress("obergeschoss"));
-        connectStacksTo(managerServiceContract,new TinkerforgeStackAddress("untergeschoss"));
-        connectStacksTo(managerServiceContract,new TinkerforgeStackAddress("erdgeschoss"));
+        ManagerServiceContract managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
+        connectTinkerforgeStacksTo(managerServiceContract, new TinkerforgeStackAddress("obergeschoss"), new TinkerforgeStackAddress("untergeschoss"), new TinkerforgeStackAddress("erdgeschoss"));
 
         subscribe("WebView/RemoteSwitch/E/touched/remoteSwitch/#", new MessageReceiver() {
             @Override
