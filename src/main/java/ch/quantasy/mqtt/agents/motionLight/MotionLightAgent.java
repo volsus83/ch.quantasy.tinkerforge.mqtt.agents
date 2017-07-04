@@ -45,8 +45,11 @@ package ch.quantasy.mqtt.agents.motionLight;
 import ch.quantasy.gateway.service.device.motionDetector.MotionDetectorServiceContract;
 import ch.quantasy.gateway.service.device.remoteSwitch.RemoteSwitchServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
+import ch.quantasy.gateway.service.timer.TimerServiceContract;
 import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
 import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
+import ch.quantasy.timer.DeviceTickerCancel;
+import ch.quantasy.timer.DeviceTickerConfiguration;
 import ch.quantasy.tinkerforge.device.remoteSwitch.SwitchSocketCParameters;
 import ch.quantasy.tinkerforge.stack.TinkerforgeStackAddress;
 import java.net.URI;
@@ -60,9 +63,10 @@ import java.util.logging.Logger;
  */
 public class MotionLightAgent extends GenericTinkerforgeAgent {
 
-    private final RemoteSwitchServiceContract remoteSwitchServiceContract;
-    private final MotionDetectorServiceContract motionDetectorServiceContract;
-    private final Thread t;
+    private RemoteSwitchServiceContract remoteSwitchServiceContract;
+    private MotionDetectorServiceContract motionDetectorServiceContract;
+
+    private int detectedCounter;
 
     public MotionLightAgent(URI mqttURI) throws MqttException {
         super(mqttURI, "2408h40h4", new GenericTinkerforgeAgentContract("MotionLight", "e48"));
@@ -70,65 +74,34 @@ public class MotionLightAgent extends GenericTinkerforgeAgent {
 
         remoteSwitchServiceContract = new RemoteSwitchServiceContract("jKQ");
         motionDetectorServiceContract = new MotionDetectorServiceContract("kfT");
-        t = new Thread(new Switcher());
 
         if (super.getTinkerforgeManagerServiceContracts().length == 0) {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
-
+        if (super.getTimerServiceContracts().length == 0) {
+            System.out.println("No TimerServcie is running... Quit.");
+            return;
+        }
+        TimerServiceContract timerContract = super.getTimerServiceContracts()[0];
         ManagerServiceContract managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
         connectTinkerforgeStacksTo(managerServiceContract, new TinkerforgeStackAddress("erdgeschoss"));
 
+        subscribe(timerContract.EVENT_TICK + "/lights/cupboard", (topic, payload) -> {
+            switchLight(SwitchSocketCParameters.SwitchTo.switchOff);
+        });
+
         subscribe(motionDetectorServiceContract.EVENT_DETECTION_CYCLE_ENDED, (topic, payload) -> {
-            synchronized (MotionLightAgent.this) {
-                delayStart = System.currentTimeMillis();
-                MotionLightAgent.this.notifyAll();
-            }
+            publishIntent(timerContract.INTENT_CONFIGURATION, new DeviceTickerConfiguration("lights/cupboard", System.currentTimeMillis(), 1000 * 30, null, null));
+
         });
         subscribe(motionDetectorServiceContract.EVENT_MOTION_DETECTED, (topic, payload) -> {
-            synchronized (MotionLightAgent.this) {
-                switchLight(SwitchSocketCParameters.SwitchTo.switchOn);
-                delayStart = null;
-            }
+            publishIntent(timerContract.INTENT_CONFIGURATION, new DeviceTickerCancel("lights/cupboard"));
+            switchLight(SwitchSocketCParameters.SwitchTo.switchOn);
         });
 
-        t.start();
-
     }
-
-    private Long delayStart;
-
     private SwitchSocketCParameters.SwitchTo state;
-
-    class Switcher implements Runnable {
-
-        @Override
-        public void run() {
-            while (true) {
-                synchronized (MotionLightAgent.this) {
-                    if (delayStart == null) {
-                        try {
-                            MotionLightAgent.this.wait(10000);
-                        } catch (InterruptedException ex) {
-                        }
-                    }
-                    if (delayStart != null) {
-                        long delay = Math.max(0, 10000 - (System.currentTimeMillis() - delayStart));
-                        try {
-                            MotionLightAgent.this.wait(delay);
-                        } catch (InterruptedException ex) {
-                        }
-                    }
-                    if (delayStart != null) {
-                        switchLight(SwitchSocketCParameters.SwitchTo.switchOff);
-                        delayStart = null;
-                    }
-                }
-            }
-        }
-
-    }
 
     private void switchLight(SwitchSocketCParameters.SwitchTo state) {
         if (this.state == state) {

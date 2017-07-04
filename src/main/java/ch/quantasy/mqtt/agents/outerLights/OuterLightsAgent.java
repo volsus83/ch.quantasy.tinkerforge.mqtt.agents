@@ -46,6 +46,7 @@ import ch.quantasy.gateway.service.device.ambientLight.AmbientLightServiceContra
 import ch.quantasy.gateway.service.device.dc.DCServiceContract;
 import ch.quantasy.gateway.service.device.motionDetector.MotionDetectorServiceContract;
 import ch.quantasy.gateway.service.stackManager.ManagerServiceContract;
+import ch.quantasy.gateway.service.timer.TimerServiceContract;
 import ch.quantasy.mqtt.agents.GenericTinkerforgeAgent;
 import ch.quantasy.mqtt.agents.GenericTinkerforgeAgentContract;
 import ch.quantasy.mqtt.gateway.client.GCEvent;
@@ -91,6 +92,12 @@ public class OuterLightsAgent extends GenericTinkerforgeAgent {
             System.out.println("No ManagerServcie is running... Quit.");
             return;
         }
+        if (super.getTimerServiceContracts().length == 0) {
+            System.out.println("No TimerServcie is running... Quit.");
+            return;
+        }
+        TimerServiceContract timerContract = super.getTimerServiceContracts()[0];
+      
 
         ManagerServiceContract managerServiceContract = super.getTinkerforgeManagerServiceContracts()[0];
         connectTinkerforgeStacksTo(managerServiceContract, new TinkerforgeStackAddress("erdgeschoss"));
